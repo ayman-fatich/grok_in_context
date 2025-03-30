@@ -7,10 +7,11 @@ import random
 import sys
 import math
 import torch
+import numpy as np
 
 #Set Global variables
 
-VLID_OPERATORS={
+VALID_OPERATORS={
     "+": "addition",
     "-": "subtraction",
     "*": "muliplication",
@@ -47,15 +48,15 @@ class ArithmeticTokenizer:
 
     token_file= "tokens.txt"
 
-    def __init__(slef, data_dir=DEFAULT_DATA_DIR)->None:
+    def __init__(self, data_dir=DEFAULT_DATA_DIR)->None:
         self.token_file=bf.join(data_dir, self.token_file)
         self.itos = self.get_tokens()
-        self.stoi = Dict[str, int] = dict([(s, i) for i, s in enumerate(self.itos)])
+        self.stoi : Dict[str, int] = dict([(s, i) for i, s in enumerate(self.itos)])
 
     @classmethod
     def get_tokens(cls):
         tokens = (
-                [EOS_TOKEN, EQ_TOKEN]
+                [EOS, EQ_TOKEN]
                 + list(sorted(list(VALID_OPERATORS.keys())))
                 + list(map(str, NUMS))
         )
@@ -66,7 +67,7 @@ class ArithmeticTokenizer:
         return len(self.itos)
 
     def _encode(self, obj:str)-> Tensor:
-        return LongTensor([self.stoi for t in obj.split(" ")])
+        return LongTensor([self.stoi[t] for t in obj.split(" ")])
 
     def encode(self, obj) -> Tensor:
         """
@@ -95,9 +96,10 @@ class ArithmeticTokenizer:
 
 class ArithmeticDataset:
     """Data set of arithmetic equations"""
-    def __init__(self, data_dir, train, data) -> None:
-        self.tekenizer = ArithmeticTokenizer(data_dir)
-        self.train=train
+    def __init__(self,name, data, train, data_dir) -> None:
+        self.tokenizer = ArithmeticTokenizer(data_dir)
+        self.name = name
+        self.train = train
         if isinstance(data, list):
             self.data = self.tokenizer.encode(data)
         else:
@@ -133,14 +135,14 @@ class ArithmeticDataset:
         return eq
 
     @classmethod
-    def make_data(cls, operator: str, shuffle=True, seed) -> list[str]:
+    def make_data(cls, operator: str, shuffle=True, seed=42) -> list[str]:
         
         assert operator in VALID_OPERATORS
         rng = np.random.RandomState(seed=seed)
-        if shuffle:
-            rng.shuffle(raw_data)
         data= cls._make_operation_data(operator)
-        return data = [EOS_TOKEN + " " + eq + " " + EOS_TOKEN for eq in data]
+        if shuffle:
+            rng.shuffle(data)
+        return [EOS + " " + eq + " " + EOS for eq in data]
         
     @classmethod
     def splits(cls, train_pct:float, operator:str, data_dir:str= DEFAULT_DATA_DIR, tr_in_context:int, val_in_context:int):
@@ -150,7 +152,7 @@ class ArithmeticDataset:
         :param tr_in_context: the number of in context examples in each equation in the training dataset
         :param val_in_context: the number of in context examples in each equation in the validation dataset
         :param operator: the operator of the equations
-        :param tarain_pct: percentage of total equations used for the training set (between 0 and 1)
+        :param train_pct: percentage of total equations used for the training set (between 0 and 1)
         :param data_dir: the output data dir
         :returns: (train_dataset, validation_dataset)
         """
@@ -176,7 +178,7 @@ class ArithmeticDataset:
 
 
         train_ds = cls(ds_name, tr_eq, train = True, data_dir = data_dir)
-        val_ds = cls(ds_name, val_eq, train = Flase, data_dir = data_dir)
+        val_ds = cls(ds_name, val_eq, train = False, data_dir = data_dir)
 
         return train_ds, val_ds
 
