@@ -67,7 +67,6 @@ class ArithmeticTokenizer:
         return len(self.itos)
 
     def _encode(self, obj:str)-> Tensor:
-        print([self.stoi[t] for t in obj.split(" ")])
         return LongTensor([self.stoi[t] for t in obj.split(" ")])
 
     def encode(self, obj) -> Tensor:
@@ -181,10 +180,6 @@ class ArithmeticDataset:
                 random_samples = random.sample(tr_eq, tr_in_context)
                 random_samples = " ".join(random_samples)
                 tr_ds.append(random_samples + " " + tr_eq[i])
-
-                print("----------- eq " + str(i)+"------------------")
-                print(random_samples)
-                print(tr_ds[i])
         else:
             tr_ds=tr_eq
 
