@@ -1,0 +1,2 @@
+epoch,step,val_accuracy,val_loss,val_perplexity
+0,9,40.274383544921875,3.166912317276001,23.734088897705078

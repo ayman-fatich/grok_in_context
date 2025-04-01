@@ -1,7 +1,7 @@
 import os
 import blobfile as bf
 import itertools
-from torsh import Tensor, LongTensor
+from torch import Tensor, LongTensor
 from typing import Tuple, List, Dict, Any, Union, Optional
 import random
 import sys
@@ -67,6 +67,7 @@ class ArithmeticTokenizer:
         return len(self.itos)
 
     def _encode(self, obj:str)-> Tensor:
+        print([self.stoi[t] for t in obj.split(" ")])
         return LongTensor([self.stoi[t] for t in obj.split(" ")])
 
     def encode(self, obj) -> Tensor:
@@ -122,7 +123,8 @@ class ArithmeticDataset:
                 if b==0:
                     continue
                 else:
-                    c=(a/b) % MODULUS
+                    c=a
+                    a=(b*c) % MODULUS
 
             #addition
             elif operator == '+':
@@ -145,7 +147,7 @@ class ArithmeticDataset:
         return [EOS + " " + eq + " " + EOS for eq in data]
         
     @classmethod
-    def splits(cls, train_pct:float, operator:str, data_dir:str= DEFAULT_DATA_DIR, tr_in_context:int, val_in_context:int):
+    def splits(cls, train_pct:float, operator:str, data_dir:str= DEFAULT_DATA_DIR, tr_in_context:int=0, val_in_context:int=0):
         """
         Creates the validation and training datasets:
 
@@ -164,21 +166,30 @@ class ArithmeticDataset:
         
         tr_eq = eq[:train_rows]
         val_eq = eq[train_rows:]
-
+        
+        val_ds = []
         if val_in_context > 0:
             for i in range(len(val_eq)):
                 random_samples = " ".join(random.sample(tr_eq, tr_in_context))
-                val_eq[i] = random_samples + val_eq[i]
+                val_ds.append(random_samples + " " + val_eq[i])
+        else:
+            val_ds=val_eq
 
-
+        tr_ds = []
         if tr_in_context > 0:
             for i in range(len(tr_eq)):
-                random_samples = " ".join(random.sample(tr_eq, tr_in_context))
-                tr_eq[i] = random_samples + tr_eq[i]
+                random_samples = random.sample(tr_eq, tr_in_context)
+                random_samples = " ".join(random_samples)
+                tr_ds.append(random_samples + " " + tr_eq[i])
 
+                print("----------- eq " + str(i)+"------------------")
+                print(random_samples)
+                print(tr_ds[i])
+        else:
+            tr_ds=tr_eq
 
-        train_ds = cls(ds_name, tr_eq, train = True, data_dir = data_dir)
-        val_ds = cls(ds_name, val_eq, train = False, data_dir = data_dir)
+        train_ds = cls(ds_name, tr_ds, train = True, data_dir = data_dir)
+        val_ds = cls(ds_name, val_ds, train = False, data_dir = data_dir)
 
         return train_ds, val_ds
 
@@ -247,25 +258,3 @@ class ArithmeticIterator(torch.utils.data.IterableDataset):
         :returns: the total number of batches
         """
         return math.ceil(len(self.dataset) / self.batchsize)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

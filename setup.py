@@ -1,4 +1,4 @@
-from setuptools import find_package, setup
+from setuptools import find_packages, setup
 
 setup(
     name="incontext_grokking",
@@ -6,9 +6,12 @@ setup(
     version="0.1",
     install_requires=[
         "numpy",
-        "torsh",
+        "torch",
         "scipy",
         "mod",
         "matplotlib",
+        "blobfile",
     ],
 )
+
+

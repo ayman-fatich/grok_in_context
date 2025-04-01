@@ -1,0 +1,9 @@
+README.md
+setup.py
+grok_utils/__init__.py
+grok_utils/data.py
+incontext_grokking.egg-info/PKG-INFO
+incontext_grokking.egg-info/SOURCES.txt
+incontext_grokking.egg-info/dependency_links.txt
+incontext_grokking.egg-info/requires.txt
+incontext_grokking.egg-info/top_level.txt
