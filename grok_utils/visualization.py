@@ -1,27 +1,54 @@
-import matplotlib.pyplot as plt
+"""
+Visualization utilities for tracking and plotting training metrics.
+"""
 import os
+import matplotlib.pyplot as plt
+import numpy as np
 
-def log_metrics(data_dir, operator, train_pct, tr_in_context, val_in_context, lr, epoch, train_acc, val_acc):
+def log_metrics(data_dir, operator, train_pct, tr_in_context, val_in_context, lr, iteration, train_acc, val_acc):
     """
-    Simple function to log metrics to a file.
+    Function to log metrics to a file.
+    Designed for logging at regular global step intervals.
+    
+    Args:
+        data_dir: Directory to save logs
+        operator: Arithmetic operator name
+        train_pct: Training split percentage
+        tr_in_context: Number of in-context examples for training
+        val_in_context: Number of in-context examples for validation
+        lr: Learning rate
+        iteration: Global step number
+        train_acc: Training accuracy
+        val_acc: Validation accuracy
     """
     # Make sure data directory exists
     os.makedirs(data_dir, exist_ok=True)
     
     log_file = os.path.join(data_dir, f"metrics_{operator}.txt")
     
-    # If this is the first epoch, write header
-    if epoch == 0 and not os.path.exists(log_file):
+    # If this is the first entry, write header
+    if not os.path.exists(log_file):
         with open(log_file, 'w') as f:
-            f.write("epoch,train_acc,val_acc\n")
+            f.write("iteration,train_acc,val_acc\n")
     
-    # Append metrics for this epoch
-    with open(log_file, 'a') as f:
-        f.write(f"{epoch},{train_acc},{val_acc}\n")
+    # Ensure values are valid numbers
+    try:
+        iteration = int(iteration)
+        train_acc = float(train_acc)
+        val_acc = float(val_acc)
         
+        # Append metrics for this iteration
+        with open(log_file, 'a') as f:
+            f.write(f"{iteration},{train_acc:.4f},{val_acc:.4f}\n")
+            
+    except (ValueError, TypeError) as e:
+        print(f"Error logging metrics: {e}")
+        print(f"Values: iteration={iteration}, train_acc={train_acc}, val_acc={val_acc}")
+
 def plot_metrics(data_dir, operator, train_pct, tr_in_context, val_in_context, lr):
     """
-    Simple function to plot metrics from log file.
+    Function to plot metrics from log file with logarithmic x-axis scale.
+    Designed for measurements taken every 10 global steps.
     """
     # Make sure data directory exists
     os.makedirs(data_dir, exist_ok=True)
@@ -33,7 +60,7 @@ def plot_metrics(data_dir, operator, train_pct, tr_in_context, val_in_context, l
         return
     
     # Read metrics
-    epochs = []
+    iterations = []
     train_accs = []
     val_accs = []
     
@@ -41,23 +68,98 @@ def plot_metrics(data_dir, operator, train_pct, tr_in_context, val_in_context, l
         # Skip header
         next(f)
         for line in f:
-            epoch, train_acc, val_acc = line.strip().split(',')
-            epochs.append(int(epoch))
+            iteration, train_acc, val_acc = line.strip().split(',')
+            iterations.append(int(iteration))
             train_accs.append(float(train_acc))
             val_accs.append(float(val_acc))
     
-    # Create plot
-    plt.figure(figsize=(10, 6))
-    plt.plot(epochs, train_accs, 'b-', label='Training Accuracy')
-    plt.plot(epochs, val_accs, 'r-', label='Validation Accuracy')
+    # Check if we have any data points
+    if len(iterations) == 0:
+        print("No data points found in the metrics file. Skipping plot creation.")
+        return
+        
+    # Create plot with logarithmic x-axis
+    plt.figure(figsize=(12, 7))
+    
+    # Add small offset to handle log(0) case if needed
+    iterations_array = np.array(iterations)
+    if len(iterations_array) > 0 and np.min(iterations_array) <= 0:
+        iterations_array = iterations_array + 1  # Add 1 to avoid log(0)
+    
+    plt.semilogx(iterations_array, train_accs, 'b-', linewidth=2, label='Training Accuracy')
+    plt.semilogx(iterations_array, val_accs, 'r-', linewidth=2, label='Validation Accuracy')
+    
+    # Add grid for logarithmic scale (grid lines at each power of 10)
+    plt.grid(True, which="both", ls="-", alpha=0.2)
+    
+    # Add minor grid lines
+    plt.grid(True, which="minor", ls="--", alpha=0.1)
+    
+    # Format x-axis ticks for better readability
+    plt.minorticks_on()
     
     # Add title and labels
     plt.title(f"Training for {operator}: split={train_pct}, tr_context={tr_in_context}, val_context={val_in_context}, lr={lr}")
-    plt.xlabel('Epochs')
+    plt.xlabel('Global Steps (log scale)')
     plt.ylabel('Accuracy')
-    plt.grid(True)
-    plt.legend()
+    plt.legend(loc='best')
+    
+    # Add tight layout for better spacing
+    plt.tight_layout()
     
     # Save plot
-    plt.savefig(os.path.join(data_dir, f"accuracy_plot_{operator}.png"))
+    plt.savefig(os.path.join(data_dir, f"accuracy_plot_{operator}.png"), dpi=300)
+    plt.close()
+
+def plot_metrics_linear(data_dir, operator, train_pct, tr_in_context, val_in_context, lr):
+    """
+    Function to plot metrics with regular linear scale for comparison.
+    """
+    # Make sure data directory exists
+    os.makedirs(data_dir, exist_ok=True)
+    
+    log_file = os.path.join(data_dir, f"metrics_{operator}.txt")
+    
+    if not os.path.exists(log_file):
+        print(f"No metrics file found at {log_file}")
+        return
+    
+    # Read metrics
+    iterations = []
+    train_accs = []
+    val_accs = []
+    
+    with open(log_file, 'r') as f:
+        # Skip header
+        next(f)
+        for line in f:
+            iteration, train_acc, val_acc = line.strip().split(',')
+            iterations.append(int(iteration))
+            train_accs.append(float(train_acc))
+            val_accs.append(float(val_acc))
+    
+    # Check if we have any data points
+    if len(iterations) == 0:
+        print("No data points found in the metrics file. Skipping plot creation.")
+        return
+        
+    # Create plot with linear x-axis
+    plt.figure(figsize=(12, 7))
+    plt.plot(iterations, train_accs, 'b-', linewidth=2, label='Training Accuracy')
+    plt.plot(iterations, val_accs, 'r-', linewidth=2, label='Validation Accuracy')
+    
+    # Add grid
+    plt.grid(True, alpha=0.2)
+    
+    # Add title and labels
+    plt.title(f"Training for {operator}: split={train_pct}, tr_context={tr_in_context}, val_context={val_in_context}, lr={lr}")
+    plt.xlabel('Global Steps')
+    plt.ylabel('Accuracy')
+    plt.legend(loc='best')
+    
+    # Add tight layout for better spacing
+    plt.tight_layout()
+    
+    # Save plot
+    plt.savefig(os.path.join(data_dir, f"accuracy_plot_linear_{operator}.png"), dpi=300)
     plt.close()

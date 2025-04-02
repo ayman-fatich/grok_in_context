@@ -91,12 +91,12 @@ def train(
     optimizer = AdamW(model.parameters(), lr)
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=warmap_steps, num_training_steps=total_steps)
     
-    #TODO: Implement the creationn of the plot to track the validation and training accuracy
 
     #Start the training loop
     global_step = 0
     save_path = os.path.join(data_dir, f"model_{VALID_OPERATORS[operator]}")
-    
+    stop=0
+    val_acc=0
     for epoch in range(epochs):
         
         # set the model to training model 
@@ -137,26 +137,28 @@ def train(
             loss.backward()
             optimizer.step()
             scheduler.step()
-
             num_train_batchs += 1
             global_step += 1
 
-            #TODO: log the loss and accuracy
-            #TODO: Plot them
-            #TODO: Save chackpoints
-    
+            # Log and plot metrics
+            if global_step % 10 == 0:
+                val_acc = validation(model, val_iterator, eq_token_id)
+
+                log_metrics(data_dir, VALID_OPERATORS[operator], train_pct, tr_in_context, val_in_context, lr, 
+                       global_step, tr_acc, val_acc)
+                                # Plot updated metrics after 10 iterations
+                plot_metrics(data_dir, VALID_OPERATORS[operator], train_pct, tr_in_context, val_in_context, lr)
+         
+
+                
         epoch_train_loss = epoch_train_loss / num_train_batchs
         epoch_train_accuracy = epoch_train_accuracy / num_train_batchs
 
-
-        val_acc = validation(model, val_iterator, eq_token_id)
-        # Log and plot metrics
-        log_metrics(data_dir, VALID_OPERATORS[operator], train_pct, tr_in_context, val_in_context, lr, 
-                   epoch, epoch_train_accuracy, val_acc)
-        
-        # Plot updated metrics after each epoch
-        plot_metrics(data_dir, VALID_OPERATORS[operator], train_pct, tr_in_context, val_in_context, lr)
-        
+        if val_acc > 0.9:
+            stop -=1
+            if stop == 0:
+                break
+       
 
         print(f"Epoch {epoch}: train loss: {round(epoch_train_loss,3)} Epoch train accuracy: {round(epoch_train_accuracy,3)} Epoch Validation accuracy: {round(val_acc, 3)}")
 
