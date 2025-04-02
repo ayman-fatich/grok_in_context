@@ -16,7 +16,7 @@ This will install all required dependencies and make the training script availab
 You can train a model using the command-line script:
 
 ```bash
-python scripts/train.py --operator add
+python scripts/train.py --operator "+"
 ```
 
 ### Command-line Options
