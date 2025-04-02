@@ -5,6 +5,9 @@ from transformers import GPT2Config, GPT2LMHeadModel, get_linear_schedule_with_w
 from torch.optim import AdamW
 from tqdm import tqdm
 from torch.nn import CrossEntropyLoss
+from visualization import log_metrics, plot_metrics
+
+
 
 def find_last_eq_pos(batch, eq_token_id):
     """Function to find the position of the last equal sign of the sequences in a batch"""
@@ -144,12 +147,19 @@ def train(
     
         epoch_train_loss = epoch_train_loss / num_train_batchs
         epoch_train_accuracy = epoch_train_accuracy / num_train_batchs
-        
+
+
         val_acc = validation(model, val_iterator, eq_token_id)
+        # Log and plot metrics
+        log_metrics(data_dir, VALID_OPERATORS[operator], train_pct, tr_in_context, val_in_context, lr, 
+                   epoch, epoch_train_accuracy, val_acc)
+        
+        # Plot updated metrics after each epoch
+        plot_metrics(data_dir, VALID_OPERATORS[operator], train_pct, tr_in_context, val_in_context, lr)
+        
 
         print(f"Epoch {epoch}: train loss: {round(epoch_train_loss,3)} Epoch train accuracy: {round(epoch_train_accuracy,3)} Epoch Validation accuracy: {round(val_acc, 3)}")
 
-    return
+    return model
 
 
-train(0.5, "+", "data", 0, 0, 5e-2, 3, 80)
