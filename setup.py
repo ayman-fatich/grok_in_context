@@ -1,19 +1,15 @@
-from setuptools import find_packages, setup
+from setuptools import setup, find_packages
 
 setup(
-    name="incontext_grokking",
+    name="grok_utils",
+    version="0.1.0",
     packages=find_packages(),
-    version="0.1",
+    scripts=["scripts/train.py"],
     install_requires=[
-        "numpy==1.26.4",
         "torch",
-        "scipy",
-        "mod",
-        "matplotlib",
-        "blobfile",
         "transformers",
-
+        "matplotlib",
+        "tqdm",
     ],
+    python_requires=">=3.6",
 )
-
-

@@ -23,7 +23,7 @@ python scripts/train.py --operator add
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--operator` | Arithmetic operator to train on (`add`, `subtract`, etc.) | *Required* |
+| `--operator` | Arithmetic operator to train on (`"+"`, `"/"`, etc.) | *Required* |
 | `--data_dir` | Directory for data and output files | `./data` |
 | `--train_pct` | Train/validation split percentage | `0.25` |
 | `--tr_in_context` | Number of in-context examples for training | `0` |
@@ -42,7 +42,7 @@ python scripts/train.py --operator add
 
 Training with custom parameters:
 ```bash
-python scripts/train.py --operator multiply --epochs 20 --lr 1e-4 --tr_in_context 10
+python scripts/train.py --operator "+" --epochs 300 --lr 1e-3 --tr_in_context 0
 ```
 
 ## Output Files

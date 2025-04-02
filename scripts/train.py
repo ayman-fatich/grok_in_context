@@ -13,7 +13,7 @@ def main():
     parser = argparse.ArgumentParser(description="Train an arithmetic GPT model")
     
     # Required arguments
-    parser.add_argument("--operator", type=str, required=True, choices=list(VALID_OPERATORS.keys()),
+    parser.add_argument("--operator", type=str, required=True, choices=["/", "+"]),
                         help="Arithmetic operator to train on")
     
     # Optional arguments with defaults
