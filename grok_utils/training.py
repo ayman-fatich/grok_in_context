@@ -11,14 +11,18 @@ from grok_utils.visualization import log_metrics, plot_metrics
 
 def find_last_eq_pos(batch, eq_token_id):
     """Function to find the position of the last equal sign of the sequences in a batch"""
-    eq_position = (batch[0]==eq_token_id).nonzero(as_tuple=True)[0]
-    return eq_position[-1]
+    eq_positions = (batch[0]==eq_token_id).nonzero(as_tuple=True)[0]
+    return eq_positions
 
-def calculate_accuracy(logits, target, eq_position):
+def calculate_accuracy(logits, target, eq_positions):
     """calculates the accuracy of the model on a training batch"""
     batch_size = logits.size(0)
-    pred_after_eq = torch.argmax(logits, dim=-1)
-    return ((pred_after_eq[:, eq_position] == target[:, eq_position]).sum().item())/batch_size
+    pred = torch.argmax(logits, dim=-1)
+    total_correct = 0
+
+    for pos in eq_positions:
+        total_correct += (pred[:, pos] == target[:, pos]).sum().item()
+    return total_correct/(len(eq_positions)*batch_size)
 
 def validation(model, val_iterator, eq_token_id):
     """returns the accuracy for the validation dataset"""
@@ -29,13 +33,13 @@ def validation(model, val_iterator, eq_token_id):
         #Loop through batchs 
         for batch in val_iterator:
             #find the position of the last EQ_TOKEN, all sequences should be the same length and format
-            last_eq_position = find_last_eq_pos(batch["text"], eq_token_id)
+            eq_positions = find_last_eq_pos(batch["text"], eq_token_id)
 
             #First approach to try: calculate the loss function based only on the token after the last eq sign.
             outputs = model(input_ids=batch["text"], attention_mask = torch.ones_like(batch["text"]))
             logits = outputs.logits
 
-            acc = calculate_accuracy(logits, batch["target"], last_eq_position)
+            acc = calculate_accuracy(logits, batch["target"], eq_positions)
             accuracy += acc
 
         accuracy = accuracy /len(val_iterator) 
@@ -113,8 +117,8 @@ def train(
             #Set the gradients to 0
             optimizer.zero_grad()
 
-            #find the position of the last EQ_TOKEN, all sequences should be the same length and format
-            last_eq_position = find_last_eq_pos(batch["text"], eq_token_id)
+            #find the positions of the EQ_TOKEN, all sequences should be the same length and format
+            eq_positions = find_last_eq_pos(batch["text"], eq_token_id)
 
             #First approach to try: calculate the loss function based only on the token after the last eq sign.
             outputs = model(input_ids=batch["text"], attention_mask = torch.ones_like(batch["text"]))
@@ -123,7 +127,8 @@ def train(
             loss_fct = CrossEntropyLoss(ignore_index=-100)
             labels = torch.full_like(batch["target"], -100)
             for i in range(batch["text"].size(0)):
-                labels[i, last_eq_position] = batch["target"][i, last_eq_position]
+                for pos in eq_positions:
+                    labels[i, pos] = batch["target"][i, pos]
 
             logits = logits.contiguous()
             mask = labels.contiguous()
@@ -131,7 +136,7 @@ def train(
             loss = loss_fct(logits.view(-1, logits.size(-1)), mask.view(-1))
             epoch_train_loss += loss.item()
             
-            tr_acc = calculate_accuracy(outputs.logits, batch["target"], last_eq_position)
+            tr_acc = calculate_accuracy(outputs.logits, batch["target"], eq_positions)
             epoch_train_accuracy += tr_acc
             #backprop and optim
             loss.backward()
