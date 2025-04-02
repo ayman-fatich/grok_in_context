@@ -11,6 +11,13 @@ def find_last_eq_pos(batch, eq_token_id):
     eq_position = (batch[0]==eq_token_id).nonzero(as_tuple=True)[0]
     return eq_position[-1]
 
+def calculate_accuracy(logits, target, eq_position):
+    """calculates the accuracy of the model on a training batch"""
+    batch_size = logits.size(0)
+    pred_after_eq = torch.argmax(logits, dim=-1)
+    return ((pred_after_eq[:, eq_position +1] == target[:, eq_position + 1]).sum().item())/batch_size
+
+
 def train(
         train_pct: float,
         operator: str,
@@ -34,7 +41,7 @@ def train(
     
     #Create the batch iterators 
     tr_iterator = ArithmeticIterator(tr_ds, device, True)
-    val_iteraot = ArithmeticIterator(val_ds, device, True)
+    val_iterator = ArithmeticIterator(val_ds, device, True)
     
     #Create the tokenizer and get the "=" token id
     tokenizer = ArithmeticTokenizer(data_dir=data_dir)
@@ -45,7 +52,7 @@ def train(
     config = GPT2Config(
                 vocab_size = len(tokenizer),
                 n_positions = 49,
-                n_emb = 128,
+                n_embd = 128,
                 n_layer = 2,
                 n_head = 4,
                 eos_token_id= tokenizer.stoi[EOS],
@@ -73,11 +80,11 @@ def train(
         
         epoch_train_loss = 0
         epoch_train_accuracy = 0
-        num_train_batches = 0
+        num_train_batchs = 0
         
 
         #Loop through batchs 
-        for batch in tqdm(tr_iterator, ascii=True, desc=f"Epoch {epoch} progress: "):
+        for batch in tqdm(tr_iterator, desc=f"Epoch {epoch} progress: "):
             
             #Set the gradients to 0
             optimizer.zero_grad()
@@ -93,10 +100,35 @@ def train(
             labels = torch.full_like(batch["target"], -100)
             for i in range(batch["text"].size(0)):
                 labels[i, last_eq_position + 1] = batch["target"][i, last_eq_position + 1]
+            
+            logits = logits.contiguous()
+            mask = labels.contiguous()
 
-             
+            loss = loss_fct(logits.view(-1, logits.size(-1)), mask.view(-1))
+            epoch_train_loss += loss
+            
+            tr_acc = calculate_accuracy(outputs.logits, batch["target"], last_eq_position)
+            print(tr_acc)
+            epoch_train_accuracy += tr_acc
+            #backprop and optim
+            loss.backward()
+            optimizer.step()
+            scheduler.step()
+
+            num_train_batchs += 1
+            global_step += 1
+
+            #TODO: log the loss and accuracy
+            #TODO: Plot them
+            #TODO: Save chackpoints
+
+        epoch_train_loss = epoch_train_loss / num_train_batchs
+        epoch_train_accuracy = epoch_train_accuracy / num_train_batchs
+        print(f"Epoch train loss: {epoch_train_loss}")
+        print(f"Epoch train accuracy: {epoch_train_accuracy}")
+
 
     return
 
 
-train(0.5, "+", "data", 0, 0, 0.9, 10, 80)
+train(0.5, "+", "data", 0, 0, 5e-5, 3, 80)
