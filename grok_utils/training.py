@@ -154,7 +154,7 @@ def train(
         epoch_train_loss = epoch_train_loss / num_train_batchs
         epoch_train_accuracy = epoch_train_accuracy / num_train_batchs
 
-        if val_acc > 0.9:
+        if val_acc > 0.99:
             stop -=1
             if stop == 0:
                 break
