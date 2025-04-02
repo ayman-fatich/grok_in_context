@@ -95,7 +95,7 @@ def train(
     #Start the training loop
     global_step = 0
     save_path = os.path.join(data_dir, f"model_{VALID_OPERATORS[operator]}")
-    stop=0
+    stop=20
     val_acc=0
     for epoch in range(epochs):
         
