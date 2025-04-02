@@ -15,7 +15,29 @@ def calculate_accuracy(logits, target, eq_position):
     """calculates the accuracy of the model on a training batch"""
     batch_size = logits.size(0)
     pred_after_eq = torch.argmax(logits, dim=-1)
-    return ((pred_after_eq[:, eq_position +1] == target[:, eq_position + 1]).sum().item())/batch_size
+    return ((pred_after_eq[:, eq_position] == target[:, eq_position]).sum().item())/batch_size
+
+def validation(model, val_iterator, eq_token_id):
+    """returns the accuracy for the validation dataset"""
+    model.eval()
+    accuracy = 0
+
+    with torch.no_grad():
+        #Loop through batchs 
+        for batch in val_iterator:
+            #find the position of the last EQ_TOKEN, all sequences should be the same length and format
+            last_eq_position = find_last_eq_pos(batch["text"], eq_token_id)
+
+            #First approach to try: calculate the loss function based only on the token after the last eq sign.
+            outputs = model(input_ids=batch["text"], attention_mask = torch.ones_like(batch["text"]))
+            logits = outputs.logits
+
+            acc = calculate_accuracy(logits, batch["target"], last_eq_position)
+            accuracy += acc
+
+        accuracy = accuracy /len(val_iterator) 
+ 
+    return accuracy
 
 
 def train(
@@ -73,7 +95,6 @@ def train(
     save_path = os.path.join(data_dir, f"model_{VALID_OPERATORS[operator]}")
     
     for epoch in range(epochs):
-        print(f"---------- Epoche {epoch} -------------")
         
         # set the model to training model 
         model.train()
@@ -84,7 +105,7 @@ def train(
         
 
         #Loop through batchs 
-        for batch in tqdm(tr_iterator, desc=f"Epoch {epoch} progress: "):
+        for batch in tr_iterator:
             
             #Set the gradients to 0
             optimizer.zero_grad()
@@ -99,16 +120,15 @@ def train(
             loss_fct = CrossEntropyLoss(ignore_index=-100)
             labels = torch.full_like(batch["target"], -100)
             for i in range(batch["text"].size(0)):
-                labels[i, last_eq_position + 1] = batch["target"][i, last_eq_position + 1]
-            
+                labels[i, last_eq_position] = batch["target"][i, last_eq_position]
+
             logits = logits.contiguous()
             mask = labels.contiguous()
 
             loss = loss_fct(logits.view(-1, logits.size(-1)), mask.view(-1))
-            epoch_train_loss += loss
+            epoch_train_loss += loss.item()
             
             tr_acc = calculate_accuracy(outputs.logits, batch["target"], last_eq_position)
-            print(tr_acc)
             epoch_train_accuracy += tr_acc
             #backprop and optim
             loss.backward()
@@ -121,14 +141,15 @@ def train(
             #TODO: log the loss and accuracy
             #TODO: Plot them
             #TODO: Save chackpoints
-
+    
         epoch_train_loss = epoch_train_loss / num_train_batchs
         epoch_train_accuracy = epoch_train_accuracy / num_train_batchs
-        print(f"Epoch train loss: {epoch_train_loss}")
-        print(f"Epoch train accuracy: {epoch_train_accuracy}")
+        
+        val_acc = validation(model, val_iterator, eq_token_id)
 
+        print(f"Epoch {epoch}: train loss: {round(epoch_train_loss,3)} Epoch train accuracy: {round(epoch_train_accuracy,3)} Epoch Validation accuracy: {round(val_acc, 3)}")
 
     return
 
 
-train(0.5, "+", "data", 0, 0, 5e-5, 3, 80)
+train(0.5, "+", "data", 0, 0, 5e-2, 3, 80)
