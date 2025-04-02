@@ -37,7 +37,7 @@ python scripts/train.py --operator add
 
 Basic training with default parameters:
 ```bash
-python scripts/train.py --operator add
+python scripts/train.py --operator "+"
 ```
 
 Training with custom parameters:

@@ -13,9 +13,8 @@ def main():
     parser = argparse.ArgumentParser(description="Train an arithmetic GPT model")
     
     # Required arguments
-    parser.add_argument("--operator", type=str, required=True, choices=["/", "+"]),
-                        help="Arithmetic operator to train on")
-    
+    parser.add_argument("--operator", type=str, required=True, choices=list(VALID_OPERATORS.keys()),
+                        help="Arithmetic operator to train on (use quotes, e.g. \"+\" or \"*\")")
     # Optional arguments with defaults
     parser.add_argument("--data_dir", type=str, default="./data",
                         help="Directory for data and output files (default: ./data)")

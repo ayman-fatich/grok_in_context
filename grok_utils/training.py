@@ -1,11 +1,11 @@
-from data import ArithmeticTokenizer, ArithmeticIterator, ArithmeticDataset, VALID_OPERATORS, EQ_TOKEN, EOS
+from grok_utils.data import ArithmeticTokenizer, ArithmeticIterator, ArithmeticDataset, VALID_OPERATORS, EQ_TOKEN, EOS
 import os
 import torch
 from transformers import GPT2Config, GPT2LMHeadModel, get_linear_schedule_with_warmup
 from torch.optim import AdamW
 from tqdm import tqdm
 from torch.nn import CrossEntropyLoss
-from visualization import log_metrics, plot_metrics
+from grok_utils.visualization import log_metrics, plot_metrics
 
 
 
