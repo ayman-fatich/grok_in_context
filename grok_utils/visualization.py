@@ -24,7 +24,7 @@ def log_metrics(data_dir, operator, train_pct, tr_in_context, val_in_context, lr
     # Make sure data directory exists
     os.makedirs(data_dir, exist_ok=True)
     
-    log_file = os.path.join(data_dir, f"metrics_{operator}.txt")
+    log_file = os.path.join(data_dir, f"metrics_{operator}_tr{tr_in_context}_val{val_in_context}.txt")
     
     # If this is the first entry, write header
     if not os.path.exists(log_file):
@@ -45,7 +45,7 @@ def log_metrics(data_dir, operator, train_pct, tr_in_context, val_in_context, lr
         print(f"Error logging metrics: {e}")
         print(f"Values: iteration={iteration}, train_acc={train_acc}, val_acc={val_acc}")
 
-def plot_metrics(data_dir, operator, train_pct, tr_in_context, val_in_context, lr):
+def plot_metrics(data_dir, operator, train_pct, tr_in_context, val_in_context, lr, diff):
     """
     Function to plot metrics from log file with logarithmic x-axis scale.
     Designed for measurements taken every 10 global steps.
@@ -53,7 +53,7 @@ def plot_metrics(data_dir, operator, train_pct, tr_in_context, val_in_context, l
     # Make sure data directory exists
     os.makedirs(data_dir, exist_ok=True)
     
-    log_file = os.path.join(data_dir, f"metrics_{operator}.txt")
+    log_file = os.path.join(data_dir, f"metrics_{operator}_tr{tr_in_context}_val{val_in_context}.txt")
     
     if not os.path.exists(log_file):
         print(f"No metrics file found at {log_file}")
@@ -99,7 +99,7 @@ def plot_metrics(data_dir, operator, train_pct, tr_in_context, val_in_context, l
     plt.minorticks_on()
     
     # Add title and labels
-    plt.title(f"Training for {operator}: split={train_pct}, tr_context={tr_in_context}, val_context={val_in_context}, lr={lr}")
+    plt.title(f"Training for {operator}: split={train_pct}, tr_context={tr_in_context}, val_context={val_in_context}, lr={lr} \n Diff = {diff}")
     plt.xlabel('Global Steps (log scale)')
     plt.ylabel('Accuracy')
     plt.legend(loc='best')
@@ -108,58 +108,6 @@ def plot_metrics(data_dir, operator, train_pct, tr_in_context, val_in_context, l
     plt.tight_layout()
     
     # Save plot
-    plt.savefig(os.path.join(data_dir, f"accuracy_plot_{operator}.png"), dpi=300)
+    plt.savefig(os.path.join(data_dir, f"metrics_{operator}_tr{tr_in_context}_val{val_in_context}.png"), dpi=300)
     plt.close()
 
-def plot_metrics_linear(data_dir, operator, train_pct, tr_in_context, val_in_context, lr):
-    """
-    Function to plot metrics with regular linear scale for comparison.
-    """
-    # Make sure data directory exists
-    os.makedirs(data_dir, exist_ok=True)
-    
-    log_file = os.path.join(data_dir, f"metrics_{operator}.txt")
-    
-    if not os.path.exists(log_file):
-        print(f"No metrics file found at {log_file}")
-        return
-    
-    # Read metrics
-    iterations = []
-    train_accs = []
-    val_accs = []
-    
-    with open(log_file, 'r') as f:
-        # Skip header
-        next(f)
-        for line in f:
-            iteration, train_acc, val_acc = line.strip().split(',')
-            iterations.append(int(iteration))
-            train_accs.append(float(train_acc))
-            val_accs.append(float(val_acc))
-    
-    # Check if we have any data points
-    if len(iterations) == 0:
-        print("No data points found in the metrics file. Skipping plot creation.")
-        return
-        
-    # Create plot with linear x-axis
-    plt.figure(figsize=(12, 7))
-    plt.plot(iterations, train_accs, 'b-', linewidth=2, label='Training Accuracy')
-    plt.plot(iterations, val_accs, 'r-', linewidth=2, label='Validation Accuracy')
-    
-    # Add grid
-    plt.grid(True, alpha=0.2)
-    
-    # Add title and labels
-    plt.title(f"Training for {operator}: split={train_pct}, tr_context={tr_in_context}, val_context={val_in_context}, lr={lr}")
-    plt.xlabel('Global Steps')
-    plt.ylabel('Accuracy')
-    plt.legend(loc='best')
-    
-    # Add tight layout for better spacing
-    plt.tight_layout()
-    
-    # Save plot
-    plt.savefig(os.path.join(data_dir, f"accuracy_plot_linear_{operator}.png"), dpi=300)
-    plt.close()
