@@ -30,7 +30,7 @@ python scripts/train.py --operator "+"
 | `--val_in_context` | Number of in-context examples for validation | `0` |
 | `--lr` | Learning rate | `1e-3` |
 | `--warmup_steps` | Scheduler warmup steps | `50` |
-| `--epochs` | Number of training epochs | `300` |
+| `--epochs` | Number of training epochs | `9000` |
 | `--seed` | Random seed | `42` |
 
 ### Examples

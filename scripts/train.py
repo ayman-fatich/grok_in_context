@@ -28,8 +28,8 @@ def main():
                         help="Learning rate (default: 1e-3)")
     parser.add_argument("--warmup_steps", type=int, default=50,
                         help="Warmup steps for scheduler (default: 50)")
-    parser.add_argument("--epochs", type=int, default=300,
-                        help="Number of training epochs (default: 300)")
+    parser.add_argument("--epochs", type=int, default=9000,
+                        help="Number of training epochs (default: 9000)")
     parser.add_argument("--seed", type=int, default=42,
                         help="Random seed (default: 42)")
     
@@ -76,8 +76,6 @@ def main():
     )
     
     print("\nTraining complete!")
-    print(f"Model saved to: {os.path.join(args.data_dir, f'model_{VALID_OPERATORS[args.operator]}_final.pt')}")
-    print(f"Training plot saved to: {os.path.join(args.data_dir, f'accuracy_plot_{VALID_OPERATORS[args.operator]}.png')}")
 
 if __name__ == "__main__":
     main()
