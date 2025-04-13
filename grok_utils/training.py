@@ -101,6 +101,9 @@ def train(
     save_path = os.path.join(data_dir, f"model_{VALID_OPERATORS[operator]}")
     stop=20
     val_acc=0
+    tr_acheived_95=0
+    val_acheived_95=0
+
     outerloop:
         for epoch in range(epochs):
             
