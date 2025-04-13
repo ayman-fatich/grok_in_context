@@ -80,7 +80,7 @@ def train(
     #Initiate the model and move it to the propper device
     config = GPT2Config(
                 vocab_size = len(tokenizer),
-                n_positions = 49,
+                n_positions = 256,
                 n_embd = 128,
                 n_layer = 2,
                 n_head = 4,
