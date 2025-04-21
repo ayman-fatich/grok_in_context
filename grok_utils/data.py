@@ -145,18 +145,12 @@ class ArithmeticDataset:
         return [EOS + " " + eq + " " + EOS for eq in data]
         
     @classmethod
-    def splits(cls, train_pct:float, operator:str, data_dir:str= DEFAULT_DATA_DIR, tr_in_context:int=0, val_in_context:int=0):
-        """
-        Creates the validation and training datasets:
+    def splits(cls, train_pct:float, operator:str, data_dir:str=DEFAULT_DATA_DIR, tr_in_context:int=0, val_in_context:int=0, seed=42):
 
-        :param tr_in_context: the number of in context examples in each equation in the training dataset
-        :param val_in_context: the number of in context examples in each equation in the validation dataset
-        :param operator: the operator of the equations
-        :param train_pct: percentage of total equations used for the training set (between 0 and 1)
-        :param data_dir: the output data dir
-        :returns: (train_dataset, validation_dataset)
-        """
         assert (0<train_pct) and (train_pct<1)
+        # Set random seed for reproducibility
+        import random
+        random.seed(seed)
         
         eq=cls.make_data(operator)
         ds_name = VALID_OPERATORS[operator]
@@ -168,7 +162,7 @@ class ArithmeticDataset:
         val_ds = []
         if val_in_context > 0:
             for i in range(len(val_eq)):
-                random_samples = " ".join(random.sample(tr_eq, tr_in_context))
+                random_samples = " ".join(random.sample(tr_eq, val_in_context))
                 val_ds.append(random_samples + " " + val_eq[i])
         else:
             val_ds=val_eq
@@ -182,8 +176,8 @@ class ArithmeticDataset:
         else:
             tr_ds=tr_eq
 
-        train_ds = cls(ds_name, tr_ds, train = True, data_dir = data_dir)
-        val_ds = cls(ds_name, val_ds, train = False, data_dir = data_dir)
+        train_ds = cls(ds_name, tr_ds, train=True, data_dir=data_dir)
+        val_ds = cls(ds_name, val_ds, train=False, data_dir=data_dir)
 
         return train_ds, val_ds
 
