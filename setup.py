@@ -10,6 +10,8 @@ setup(
         "transformers",
         "matplotlib",
         "tqdm",
+        "scikit_learn",
+        "blobfile",
     ],
     python_requires=">=3.6",
 )
